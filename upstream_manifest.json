@@ -1,0 +1,53 @@
+{
+  "upstream": "https://github.com/RVC-Boss/GPT-SoVITS",
+  "local_distribution": "GPT-SoVITS-v2pro-20250604",
+  "exact_upstream_commit": null,
+  "note": "Local distribution includes custom modifications; folder date is not a verified upstream commit.",
+  "files": [
+    {
+      "path": "GPT_SoVITS/s1_train.py",
+      "local_base_sha256": "fa499153871d8ba79dd9e07a4494c5844bfb67875c2791718ea0fd787353bbbe",
+      "modified_sha256": "1bf0de44c30a6049f59482045c1f91fc253872e9f1723e6266569b19eb950463"
+    },
+    {
+      "path": "GPT_SoVITS/s2_train.py",
+      "local_base_sha256": "fc39617b175c5b7b14000d7eb1883e720283714038b707e66dbbd0751675f2f5",
+      "modified_sha256": "b80fb99467dc24a3af628f6b5ce7d8df79aed3a8409a1d264cc1dce87ef20f60"
+    },
+    {
+      "path": "GPT_SoVITS/process_ckpt.py",
+      "local_base_sha256": "327c433017946118443d56cd10571a1773d39fc7745c6004ad53f2d1fd500d10",
+      "modified_sha256": "da297da9f0d1d94af3a56f17d512e595cecf02e06155d2ba2d681b14633ac4ed"
+    },
+    {
+      "path": "GPT_SoVITS/utils.py",
+      "local_base_sha256": "46ba575b44fadc92177a8aac38c7d32d0bc394b96364e369009ccb96ba31f1a0",
+      "modified_sha256": "b6eb76497cbccf02187c25268c21145f2c8569261633c36c3ec86bd0f1cbce5e"
+    },
+    {
+      "path": "GPT_SoVITS/AR/data/data_module.py",
+      "local_base_sha256": "1e434efa41f03864fd63e62454c0334a86cd4aa09766508fbce98d51518f0559",
+      "modified_sha256": "6751ff6776fd4e9ec968446d35258736c536aac30e73490df2252d3cf111b1e4"
+    },
+    {
+      "path": "GPT_SoVITS/AR/data/bucket_sampler.py",
+      "local_base_sha256": "1ecbe529c5a9a8ef4e86a367a4fe2c2b6ce315ffc192828b56df0eee5dcd3e3b",
+      "modified_sha256": "b4a2fbe2b7fe8d9a4a7d16d961bb6811d3fd86ada89f8200f5242a338dce8ab1"
+    },
+    {
+      "path": "GPT_SoVITS/AR/models/t2s_lightning_module.py",
+      "local_base_sha256": "6a4d3173181000a6012bbdf055ca8a29ea6e48ce5a09605a579b509a548f8588",
+      "modified_sha256": "22c076a466abd400c32e4e58eb8e5a97354ceedd70ed005a329f6aab16855ac7"
+    },
+    {
+      "path": "GPT_SoVITS/AR/modules/lr_schedulers.py",
+      "local_base_sha256": "5dfad3ef8bef60552b4619b510c84811eca6a9f9952d3e83ab027e29ee15526f",
+      "modified_sha256": "c14a82d1cdd3fe9d3d8114f6205c7e42cd3cf8dd1ec8e75e65e6a6d8680fd90a"
+    },
+    {
+      "path": "GPT_SoVITS/AR/utils/io.py",
+      "local_base_sha256": "3d529b1788e38dc4f7af3d007f6a91264182c372d88ae42cec86749ed6071b92",
+      "modified_sha256": "7a28d50b960d22f909684c590c6a4ec523b7f9bbc5355f3581c86c271d63676b"
+    }
+  ]
+}

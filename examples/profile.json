@@ -1,0 +1,27 @@
+{
+  "model": {
+    "version": "v2Pro",
+    "device": "cuda",
+    "is_half": true,
+    "t2s_weights_path": "D:/VoiceModels/admin/GPT.ckpt",
+    "vits_weights_path": "D:/VoiceModels/admin/SoVITS.pth",
+    "bert_base_path": "D:/Tools/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large",
+    "cnhuhbert_base_path": "D:/Tools/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base"
+  },
+  "request": {
+    "text_lang": "all_zh",
+    "prompt_lang": "all_zh",
+    "ref_audio_path": "D:/VoiceModels/admin/reference.wav",
+    "prompt_text": "请填写与参考音频完全一致的文本。",
+    "temperature": 0.75,
+    "top_k": 5,
+    "top_p": 1,
+    "text_split_method": "cut5",
+    "batch_size": 1,
+    "speed_factor": 1,
+    "fragment_interval": 0.2,
+    "parallel_infer": true,
+    "streaming_mode": false,
+    "repetition_penalty": 1.35
+  }
+}
