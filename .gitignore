@@ -6,6 +6,7 @@ runtime/
 pretrained_models/
 runs/
 .test-artifacts/
+.local/
 *.wav
 *.mp3
 *.m4a
@@ -18,3 +19,10 @@ runs/
 *.bin
 *.log
 *.list
+
+.venv*/
+.cache/
+models/
+audit/
+experiments/
+*.jsonl

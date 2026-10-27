@@ -1,0 +1,7 @@
+# Requires an existing compatible CUDA PyTorch runtime; see docs/QWEN3_TTS_INTEGRATION.md
+qwen-tts==0.1.1
+transformers==4.57.3
+accelerate==1.12.0
+gradio==5.49.1
+huggingface-hub==0.36.2
+soundfile==0.14.0

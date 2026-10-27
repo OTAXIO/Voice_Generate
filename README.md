@@ -1,109 +1,71 @@
-# Voice_Generate
+所属项目基线：**V_0**；整体原理和操作见 `../Codex-report-news/News_Video/docs/V_0/README.md`。此名称不改变Qwen模型版本。
 
-围绕 **GPT-SoVITS v2Pro** 的 Windows 单卡训练修复、数据准备与新旧模型对照工具。主要用于已有标注和特征工程的角色声音微调。
+# 当前发音与停顿要求
 
-## 上游来源与致谢
+先读 [SPEECH_POLICY.md](docs/SPEECH_POLICY.md)，2026-10-27最新词组读音、模型名内部短停顿和句间停顿以此为准；旧样片不改。
 
-本项目参考并修改自 **[RVC-Boss/GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS)**，原作者和贡献者完成了语音模型、训练框架和推理引擎的主体工作。本仓库提供兼容性修复和工作流工具，不是独立开发的 TTS 引擎，也不是 GPT-SoVITS 官方发布。
+# 本地新闻语音生成：Qwen3-TTS 0.6B
 
-本次修改依据为本地 `GPT-SoVITS-v2pro-20250604` 整合包。该目录包含定制代码，**未核实其对应的精确上游 commit**，因此不将目录日期当作已验证的官方版本号。[upstream_manifest.json](upstream_manifest.json) 记录修改前后文件的 SHA-256，便于核对来源。
+当前主后端为 **Qwen3-TTS-12Hz-0.6B-Base**。用户已试听确认更喜欢 Qwen 的效果。当前通过参考音频克隆音色，**尚未执行 Qwen 微调训练**，不能把零样本克隆写成“训练完成”。
 
-`overrides/GPT_SoVITS/` 中的文件为上游衍生代码，保留原文件中的来源注释；其中 AR 模块原有的 SoundStorm、VALL-E 等引用也予以保留。沿用上游 **MIT License / Copyright (c) 2024 RVC-Boss**，完整许可见 [LICENSE](LICENSE)。模型权重和数据另依各自来源许可取得。
+本项目提供本地调用、新闻逐句时间映射、参考音频复用、数据准备和试听对照。模型与训练框架来自 [QwenLM/Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS)。Qwen 的官方代码/权重许可按其 Apache-2.0 文件执行；vendor/qwen3_official 保留上游版权和 LICENSE。历史 GPT-SoVITS 部分来自 RVC-Boss/GPT-SoVITS，沿用其原有 MIT 许可与来源说明。
 
-## 本次修复
+## 当前选择与硬件
 
-- **单卡通信**：SoVITS 单设备直接训练，多 GPU 才启动分布式通信，避免单卡仍依赖 TCPStore。GPT 单卡使用普通训练策略，采样器在未初始化进程组时采用 world size 1、rank 0。
-- **模块加载**：训练入口显式优先加载运行目录中的修复副本，兼容整合包隔离 Python 忽略 `PYTHONPATH` 的情况。
-- **学习率**：修复本地版本把 GPT 学习率锁死为 `0.002`、调度器不采用计算值的问题；初始化、warmup、cosine decay 和报告值一致。
-- **文件保存**：checkpoint 临时文件放在目标目录，用文件对象保存，再原子替换；避免在安装目录写临时文件及中文路径问题。
-- **编码和 DataLoader**：配置显式按 UTF-8 读写；`num_workers=0` 时关闭 persistent workers，并不设置预取因子。
-- **可追溯实验**：独立输出目录、训练/留出划分、重提音频特征、多个检查点、同条件 ASR / 声纹 / 耗时比较。
+- RTX 4060 Laptop，8GB 总显存；本次检查约 4.4GB 空闲。
+- 用户确认：若 1.7B 显存不足就放弃，0.6B 效果已好。因此不在本机强行启动 1.7B 常规全参数训练，也不为此中断其他 GPU 工作。
+- 本次下载产生的 1.7B 目录已清理；没有训练出 1.7B 结果。0.6B 官方基础权重、参考音频和现有可用环境保留。
+- 延长轮数不会降低显存需求，也不保证自然度提升。未来确需优化 0.6B 时，先补充自然叙述素材、试跑显存、以留出验证和试听选模型，不机械选择最后一轮。
 
-## 目录
+## 调用
 
-```text
-voice_generate.py                 # 使用整合包解释器运行各命令
-tools/prepare.py                 # 整理音频、生成新特征与训练配置
-tools/train.py                   # 隔离训练，支持阶段选择和 STOP 标记
-tools/compare.py                 # 同参考、同文本、同参数的新旧对照
-tools/synthesize.py              # 从显式 profile 生成音频
-tools/set_default.py             # 备份后统一 WebUI、缓存和 API 的默认声音
-overrides/GPT_SoVITS/            # 优化后的上游衍生源码
-examples/                       # 配置格式示例，不含声音或权重
-docs/                           # 训练参数、验证结果与限制
-tests/test_runtime_fixes.py       # 回归测试
-```
-
-录音、模型、运行日志、缓存和安装包不在本仓库内。工具在 `--output` 指定的目录工作，不自动删除素材或改写原安装目录。
-
-## 环境和使用前提
-
-已在 Windows、Python 3.9.13、PyTorch 2.0.0+cu118、RTX 4060 Laptop 8 GB 上完成训练验证。沿用本地 GPT-SoVITS 整合包的解释器和依赖；本仓库不附带运行时、预训练模型或一键重新安装环境脚本。
-
-需要已经具备：
-
-1. 可用的 v2Pro 预训练 GPT / SoVITS / HuBERT / 中文 BERT / SV 模型；比较工具还需要本地 Paraformer Large。
-2. `audio_path|speaker|language|text` 格式的 UTF-8 `.list`。
-3. 与上述文本一致的既有工程 `2-name2text.txt` 和 `3-bert/`。BERT 特征只依赖文本，本次可复用；音频变更后重新生成 HuBERT、SV 和语义特征。
-
-此版本按上述本地分支验证。其他 GPT-SoVITS 版本或多卡环境尚未验证，不能把覆盖文件当作所有上游版本通用的补丁。
-
-## 准备与训练
-
-在仓库目录运行，路径请替换成自己的安装位置：
+新闻项目实际路径为 `../Codex-report-news/News_Video`，默认 `config.voice.backend=qwen3`。
 
 ```powershell
-$project = 'D:\Tools\GPT-SoVITS-v2pro-20250604'
-$python = "$project\runtime\python.exe"
-
-& $python -B .\voice_generate.py prepare --project $project --output .\runs\admin `
-  --labels "$project\output\gly_asr_opt\gly_slicer_opt.list" `
-  --features "$project\logs\管理员" --holdout 3,10,19,23
-
-& $python -B .\voice_generate.py train --project $project --output .\runs\admin
+& ./.venv-qwen3/Scripts/python.exe -B ./tools/qwen_generate_context.py --job JOB_JSON
 ```
 
-`--holdout` 为 `.list` 中从 0 开始的记录索引，默认值对应本次 32 段素材。换素材时应重新决定留出记录。准备过程会转换为 32 kHz 单声道，保留约 120 ms 外侧余量，把超过 0.8 秒的内部低能量停顿缩至约 0.45 秒；判定阈值为 20 ms 帧的 −40 dBFS RMS。这是实验处理规则，不能把所有低能量部分都视为无用静音。
+job 必需字段：model_path、reference、reference_text、text_file、output_file。使用本地 0.6B Base 目录和逐字准确的参考台词；新闻流程已接入逐句生成、2 秒导览停顿及字幕时间映射。默认保留自然尾字，不压缩/淡出或机械变速。不要把旧 GPT-SoVITS 的采样/速度参数当成 Qwen 已实现的参数。
 
-默认训练参数：SoVITS 12 轮、batch 4、LR `5e-5`，每 4 轮保存；GPT 10 轮、batch 4，LR 从 `1e-5` warmup 到 `1e-4`，cosine 衰减到 `1e-5`，每 2 轮保存。配置保存在输出目录的 `s2.json`、`s1.yaml`，训练前可以修改。上游 GPT 手动优化会按多个 batch 累积梯度，batch size 不等于一次 optimizer update 的独立样本数。
+环境使用专用 `.venv-qwen3`，只读复用本机 CUDA PyTorch；不将这个目录直接当作跨机可运行包。固定 Qwen 依赖见 requirements-qwen3.txt。新机器另行安装运行时、下载官方权重和准备参考音频，不上传个人音频/权重/环境到 Git。
 
-准备时可加 `--gpt-original-timing`，让 SoVITS 使用整理后的音频，而 GPT 使用原有语义特征保留台词节奏；此时 `--features` 还须包含原始 `6-name2semantic.tsv`。两边保持相同训练/留出索引。这是本次做过的额外消融实验，不能预先保证比统一整理数据更好。
+当前样音与同文稿对照在本机 `experiments/qwen3-20261027/`。详细接入说明见 [QWEN3_TTS_INTEGRATION.md](docs/QWEN3_TTS_INTEGRATION.md)。历史桌面入口“启动语音生成.bat”仍为 GPT-SoVITS 工具，不是 Qwen 界面；新闻工程和上面的 Qwen 入口才使用当前默认后端。
 
-只重跑一个阶段可以使用 `--stage s1` 或 `--stage s2`。训练器会尝试读取该运行目录的已有 checkpoint；需要完全重新训练时请使用新输出目录。创建 `runs/admin/STOP` 可停止当前训练子进程树；恢复前应显式移除 STOP。停止不保证保存当前未完成 batch，但保留已完成的检查点。
+## 数据与后续训练
 
-## 比较和生成
+现有素材共 32 条，已导出 28 条训练、4 条留出验证；每条必须有准确的 audio/text/ref_audio。原始素材、标注、参考音频和数据清单保留。已有格式导出不代表完成采样率归一化、音频码提取或模型训练，正式训练前还需将音频和参考规范为 24kHz 并验证。
 
-编辑 [examples/comparison.json](examples/comparison.json)，填入新旧权重、参考音频和测试文本的**绝对路径**。两组模型使用相同参考、参数和种子，避免模型、参考音频一起变化导致无法判断原因。
+官方单说话人微调流程及本地准备工具：
 
-```powershell
-& $python -B .\voice_generate.py compare --project $project --output .\runs\comparison `
-  --spec .\examples\comparison.json
-```
+- `tools/prepare_qwen_dataset.py`：导出清单、检查重复和训练/验证泄漏。
+- `vendor/qwen3_official/`：带原始许可的官方数据与准备脚本，仅作为已核查的上游参考；训练改进须在独立目录进行。
+- 当前不启动长时间训练；保留 0.6B 可用音色。未来训练按阶段提高上限，保留最佳验证模型和最后断点，出现漏字、加速、音色退化即停止评估。
 
-输出 `summary.json`、完整 `comparison.json`、WAV 以及可离线打开的 `comparison.html`。生成和 ASR 分阶段执行以控制显存。比较参数默认为中文 `all_zh`、temperature 0.75、top_k 5、top_p 1、cut5、语速 1、非流式；英文和混合语种需要另行配置和验证。
+## 旧训练产物的整理
 
-编辑 [examples/profile.json](examples/profile.json) 后可明确指定声音生成：
+17 个不被当前配置引用的 GPT-SoVITS 检查点已移至工作区 `.retired-models/20261027-gpt-sovits-checkpoints/`，约 5.30GiB。manifest.json 保存原路径、归档路径、字节数和 SHA-256，移动后已校验；这是可恢复归档，**没有声称永久删除或释放这部分磁盘空间**。需要恢复旧实验时按清单还原，不能直接运行引用已归档路径的历史实验 profile。
 
-```powershell
-& $python -B .\voice_generate.py synthesize --project $project --output .\runs\sample `
-  --profile .\examples\profile.json --text '今天的工作已经完成，我们明天再继续。'
-```
+原始音频、参考、标注、当前 0.6B、代码与实验记录不清理。GPT-SoVITS 原安装位于工作区外，仍保留，以免擅自影响其他项目；已发布成品保持不变。历史说明见 [legacy-gpt-sovits-readme.md](docs/legacy-gpt-sovits-readme.md)。
 
-若希望原 WebUI 也默认选中该声音，先把两份权重放到安装目录对应的 weights 文件夹，再执行：
+## 验证边界
 
-```powershell
-& $python -B .\voice_generate.py set_default --project $project --output .\runs\webui-backup `
-  --profile .\examples\profile.json
-```
+已验证：Qwen 本地 CUDA 克隆、新闻逐句与导览停顿、字幕时间映射，用户偏好 0.6B；未验证或未做：1.7B 训练、Qwen 微调效果、更多轮数一定改善自然度。
 
-这一步会明确修改原安装目录的 `webui.py` 默认选项、`weight.json` 和 `tts_infer.yaml`，原文件备份在 `--output`。其他命令只在输出目录工作。如此可避免“配置文件选了管理员，主界面下拉框却又覆盖成其他模型”的问题。
 
-## 测试与结果
+时间口播规范：13点48分 / 13:48 读“十三点四十八分”，48 不逐位读“四八”。仅转换语音稿，画面/字幕保留原有阿拉伯数字；分钟小于10时读“零五”等，整点读“点整”。tibo 目标为梯一声、啵轻声、两音节连读；语气平稳克制，整段统一生成。
 
-```powershell
-& $python -B .\tests\test_runtime_fixes.py -v
-```
 
-4 项回归测试覆盖学习率实际变化、中文 checkpoint 往返读写、CUDA 可用但未初始化分布式组的采样器，以及 WebUI/API/缓存默认模型一致性。训练结果见 [docs/experiment.md](docs/experiment.md)。
+用户最新语速要求：在当前基准上仅将说话部分加快约3%（speech_rate=1.03），每句处理后再插入原长停顿，pause仍为0.20秒，不将整段含停顿音频一起加速。FFmpeg atempo保持音高，禁止额外吞尾或压缩句尾。导览2秒静音另按原规则保留。发音目标为梯一声/啵轻声；时间为十三点四十八分，字幕仍用数字。采样设置是稳定性调整，不是已验证的情绪控制，最终听感待试听。
 
-CER 包含 ASR 自身错误；声纹余弦使用项目自带 SV 编码器，并不是独立盲测，也不是“像本人百分比”。这些数值不能证明自然度、情绪或电音已经改善，必须结合试听。训练完成、自动指标通过与人耳更喜欢某个版本是不同的结论；本项目会分别记录。
+
+## 当前生效：连贯语音与停顿（2026-10-27 最新）
+
+- 主模型仍为用户认可的 Qwen3-TTS 0.6B Base，未重新训练或替换权重。
+- 改为同一条新闻/场景连续生成，再用本地 FunASR 文本对齐和波形低能量句界恢复逐句时间。避免每句话单独重新采样导致的语气变化；字幕仍单行，tibo 与数字的显示稿不改。
+- 取消额外 3% 加速，speech_rate=1.0。句间目标静音约 0.40 秒，场景/新闻切换约 0.60 秒；导览后的 2 秒留时仍按场景规则执行。只调整检测到的低能量间隙，不对发音尾字压缩或淡出；找不到可靠间隙就报错，不盲切活动语音。
+- 保留发音目标：tibo 为梯一声、啵轻声（语音稿梯啵），13点48分为十三点四十八分，画面和字幕仍用 tibo/数字。
+- 正式新闻入口根据 config.voice.qwen3.contextual_generation 调用 Voice_Generate/tools/qwen_generate_context.py；底层单句接口仍为 qwen_generate_job.py。对齐模型在 Voice_Generate/models/fa-zh，Python 在 config 的 alignment_python；只复用旧环境里的本地 ASR 依赖，不读取旧 GPT-SoVITS 音色 profile/权重。新机器需准备运行时及官方对齐模型，模型不进 Git/ZIP。
+- 技术验证：18 项语音测试、54 项新闻测试通过；实际正式入口的 3 句隔离烟测通过，包含 2 秒导览留时、逐句时间映射且移除旧 GPT profile/engine 字段仍可运行。新样片为两段新闻上下文、8 句对齐输出；辅助 ASR 为十三点四十八分，识别不能替代轻声/自然度试听。
+- 若新流程仍达不到用户听感要求，再训练独立的 0.6B 候选，使用留出验证与同文稿试听选模型，通过后切换 model_path；不直接覆盖可用 Base，不单纯堆轮数。当前尚未执行 Qwen 微调。
+
+详细上下文接口及本地对齐说明见 [CONTEXTUAL_VOICE.md](docs/CONTEXTUAL_VOICE.md)。context job 除原字段外还需要 alignment_python、alignment_model；可用 context_group_sentence_counts 明确逐新闻分组。底层 qwen_generate_job.py 保留用于独立单句测试。
