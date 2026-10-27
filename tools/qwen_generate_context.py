@@ -16,7 +16,7 @@ def main():
     for count in counts:grouped.append(''.join(sentences[cursor:cursor+count]));cursor+=count
     spoken=run/'spoken.txt';spoken.write_text('\n\n'.join(grouped),encoding='utf-8')
     aligned_text=run/'normalized-sentences.txt';aligned_text.write_text('\n'.join(sentences),encoding='utf-8')
-    source=run/'context.wav';raw_job=dict(job,text_file=str(spoken),output_file=str(source),synthesis_unit='paragraph',max_context_chars=220,speech_rate=1.0,pause=0,max_new_tokens=1024)
+    source=run/'context.wav';raw_job=dict(job,text_file=str(spoken),output_file=str(source),synthesis_unit='paragraph',max_context_chars=220,speech_rate=1.0,pause=0,max_new_tokens=int(job.get('context_max_new_tokens',1024)))
     source_job=run/'job.json';source_job.write_text(json.dumps(raw_job,ensure_ascii=False,indent=2),encoding='utf-8')
     env=os.environ.copy();env.update(PYTHONUTF8='1',PYTHONIOENCODING='utf-8',PYTHONDONTWRITEBYTECODE='1',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',NUMBA_CACHE_DIR=str(run/'numba'))
     flags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0
