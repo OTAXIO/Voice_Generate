@@ -2,7 +2,7 @@
 import re
 
 # Chinese homophones constrain a known word, not every occurrence of 调.
-READINGS={'调用':'掉用'}
+READINGS={'调用':'掉用','干员':'赣员'}
 COMPOUND=re.compile(r'(?i)(?:GPT[- ]?[0-9]+(?:\.[0-9]+)*\s*(?:Terra|Astra|Sol)|[0-9]+(?:\.[0-9]+)+\s*(?:Terra|Astra|Sol)|ChatGPT\s+Work|Open\s+AI)')
 
 def prepare_text(text,readings=None):

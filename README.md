@@ -69,3 +69,5 @@ job 必需字段：model_path、reference、reference_text、text_file、output_
 - 若新流程仍达不到用户听感要求，再训练独立的 0.6B 候选，使用留出验证与同文稿试听选模型，通过后切换 model_path；不直接覆盖可用 Base，不单纯堆轮数。当前尚未执行 Qwen 微调。
 
 详细上下文接口及本地对齐说明见 [CONTEXTUAL_VOICE.md](docs/CONTEXTUAL_VOICE.md)。context job 除原字段外还需要 alignment_python、alignment_model；可用 context_group_sentence_counts 明确逐新闻分组。底层 qwen_generate_job.py 保留用于独立单句测试。
+
+2026-10-29词组读音：按用户明确要求，干员读gàn yuán（干四声）；tools/speech_text.py仅TTS输入将干员替换为同音赣员，字幕与原文仍为干员，其他干字词不变。新增干员/六星干员/干员展示适用，不改模型、音色、语速和停顿。实际声调须试听，ASR不能单独证明。
